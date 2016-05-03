@@ -32,6 +32,8 @@ HEADERS += \
 OTHER_FILES += \
     test/alloc.c \
 
+MOC_DIR = $$PWD/moc
+RCC_DIR = $$PWD/rc
 
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/lib/ -lMemoryInfo
 else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/lib/ -lMemoryInfo

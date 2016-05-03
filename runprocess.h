@@ -20,6 +20,7 @@ public:
 		MemoryOutExit = 4,
 	};
 private:
+	QFile inputFile;
 	int waitingTime;
 	int timerId;
 	bool initiativeStopped;
@@ -41,7 +42,7 @@ private:
 	void startCurrentProgram();
 public:
 
-	RunProcess(QString filename, QObject *parent = nullptr);
+	RunProcess(const QString &filename, QString &inputFilePath = QString(), QObject *parent = nullptr);
 	~RunProcess(){
 		//qDebug() << "RUNPROCESS DESTROYED.";
 		this->mmThread->quit();
@@ -64,6 +65,8 @@ signals:
 
 	void sendStdOutput(QString);
 	void sendStdError(QString);
+	void inputFileNotFound();
+	void inputFileOpenFailed();
 
 private slots:
 	void errorOccurred(QProcess::ProcessError error);

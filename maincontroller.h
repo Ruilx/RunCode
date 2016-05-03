@@ -57,23 +57,23 @@ private slots:
 		this->processExitCode = this->runProcess->getExitCode();
 		this->runProcessThread->quit();
 		if(this->settings.printStatus){
-			QString statusStr = "Program exit with %1, exit code: %2, used memory: %3k.\n";
+			QString statusStr = "Program exit %1, exit code: %2, used memory: %3k.\n";
 			QString str;
 			switch(this->processStatus){
 				case RunProcess::Unknown:
-					str.append("unknown");
+					str.append("but unknown");
 					break;
 				case RunProcess::NormalExit:
-					str.append("normal");
+					str.append("normally");
 					break;
 				case RunProcess::RuntimeErrorExit:
-					str.append("runtime error");
+					str.append("in runtime error");
 					break;
 				case RunProcess::TimeOutExit:
-					str.append("time out");
+					str.append("in time out");
 					break;
 				case RunProcess::MemoryOutExit:
-					str.append("memory out");
+					str.append("in memory out");
 					break;
 				default:
 					str.append("RunCode source issue");

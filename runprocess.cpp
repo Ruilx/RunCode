@@ -76,6 +76,10 @@ void RunProcess::startCurrentProgram(){
 		connect(this->mm, SIGNAL(memoryOverflowSig()), this, SLOT(stopProgramBecauseOfMemory()));
 		connect(this->mmThread, SIGNAL(started()), this->mm, SLOT(startMonitor()));
 		this->mmThread->start();
+		if(this->inputFile.isOpen()){
+			this->process->write(this->inputFile.readAll());
+			this->process->write('\n');
+		}
 		this->timerId = startTimer(timeLimit, Qt::CoarseTimer);
 
 	}else{
@@ -83,7 +87,7 @@ void RunProcess::startCurrentProgram(){
 	}
 }
 
-RunProcess::RunProcess(QString filename, QObject *parent): QObject(parent)
+RunProcess::RunProcess(const QString &filename, QString &inputFilePath, QObject *parent): QObject(parent)
 {
 	//qDebug() << "RUN PROCESS CREATED.";
 	this->waitingTime = 5000;
@@ -107,6 +111,18 @@ RunProcess::RunProcess(QString filename, QObject *parent): QObject(parent)
 	this->connect(this->process, &QProcess::readyReadStandardError, this, &RunProcess::readStandardError);
 	this->connect(this->process, &QProcess::readyReadStandardOutput, this, &RunProcess::readStandardOutput);
 	this->connect(this->process, &QProcess::stateChanged, this, &RunProcess::stateChanged);
+
+	if(inputFilePath.isEmpty()){
+		return;
+	}
+	if(!QFile::exists(inputFilePath)){
+		emit inputFileNotFound();
+		return;
+	}
+	if(!this->inputFile.open(inputFile)){
+		emit inputFileOpenFailed();
+		return;
+	}
 }
 
 void RunProcess::errorOccurred(QProcess::ProcessError error){
