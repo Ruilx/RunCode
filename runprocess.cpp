@@ -33,6 +33,10 @@ int RunProcess::getExitCode(){
 	return this->exitCode;
 }
 
+uint RunProcess::getDuringTime(){
+	return this->duringTime;
+}
+
 void RunProcess::setTimeLimit(uint timeLimit){
 	this->timeLimit = timeLimit;
 }
@@ -69,6 +73,7 @@ void RunProcess::startCurrentProgram(){
 
 		this->mmThread = new QThread(this);
 		this->process->start();
+		this->duringTimer.start();
 		this->pid = this->process->processId();
 		this->mm = new MemoryMonitor(this->pid, memLimit);
 		this->mm->moveToThread(this->mmThread);
@@ -78,7 +83,7 @@ void RunProcess::startCurrentProgram(){
 		this->mmThread->start();
 		if(this->inputFile.isOpen()){
 			this->process->write(this->inputFile.readAll());
-			this->process->write('\n');
+			this->process->write("\n");
 		}
 		this->timerId = startTimer(timeLimit, Qt::CoarseTimer);
 
@@ -87,7 +92,7 @@ void RunProcess::startCurrentProgram(){
 	}
 }
 
-RunProcess::RunProcess(const QString &filename, QString &inputFilePath, QObject *parent): QObject(parent)
+RunProcess::RunProcess(const QString &filename, QString inputFilePath, uint outputLimit, QObject *parent): QObject(parent)
 {
 	//qDebug() << "RUN PROCESS CREATED.";
 	this->waitingTime = 5000;
@@ -98,6 +103,9 @@ RunProcess::RunProcess(const QString &filename, QString &inputFilePath, QObject 
 	this->timeLimit = 5000;
 	this->memLimit = 65535;
 	this->exitCode = -1;
+	this->duringTime = 0;
+	this->outputLimit = outputLimit;
+	this->outputLength = 0;
 
 	this->process->setProgram(filename);
 #if QT_VERSION >= 0x050600 //if QT Version is 5.6.0 or later, QProcess::error signal called errorOccurred
@@ -119,7 +127,8 @@ RunProcess::RunProcess(const QString &filename, QString &inputFilePath, QObject 
 		emit inputFileNotFound();
 		return;
 	}
-	if(!this->inputFile.open(inputFile)){
+	this->inputFile.setFileName(inputFilePath);
+	if(!this->inputFile.open(QIODevice::ReadOnly)){
 		emit inputFileOpenFailed();
 		return;
 	}
@@ -182,6 +191,7 @@ void RunProcess::errorOccurred(QProcess::ProcessError error){
 
 void RunProcess::finished(int exitCode, QProcess::ExitStatus exitStatus){
 	QList<uint> memHis;
+	this->duringTime = this->duringTimer.elapsed();
 	switch(exitStatus){
 		case QProcess::NormalExit:
 			/* The process exitted normally */
@@ -224,6 +234,11 @@ void RunProcess::readStandardOutput(){
 	QByteArray str = this->process->readAllStandardOutput();
 	if(str.isEmpty()){
 		// if reads none? no output
+		return;
+	}
+	this->outputLength += size;
+	if(this->outputLimit && this->outputLength > this->outputLimit){
+		this->stopProgramBecauseOfOutputLimit();
 		return;
 	}
 	emit this->sendStdOutput(str);
@@ -275,6 +290,10 @@ void RunProcess::stopCurrentProgram(){
 		//LogSystem::writeDebugLog(LogSystem::Debug, "processTimer", "timer Stop failure. there has no timer is running!");
 		this->killProcess();
 	}
+}
+void RunProcess::stopProgramBecauseOfOutputLimit(){
+	stopCurrentProgram();
+	this->processStatus = OutputLimit;
 }
 
 void RunProcess::stopProgramBecauseOfMemory(){

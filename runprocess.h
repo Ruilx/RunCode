@@ -18,6 +18,7 @@ public:
 		RuntimeErrorExit = 1,
 		TimeOutExit = 2,
 		MemoryOutExit = 4,
+		OutputLimit = 8,
 	};
 private:
 	QFile inputFile;
@@ -26,9 +27,12 @@ private:
 	bool initiativeStopped;
 	uint timeLimit;
 	uint memLimit;
+	uint outputLimit;
+	uint outputLength;
 	MemoryMonitor *mm;
 	QThread *mmThread;
-	//QElapsedTimer *duringTimer;
+	QElapsedTimer duringTimer; // this timer will replace by cpumonitor
+	uint duringTime;
 	int exitCode;
 
 	ProcessStatus processStatus;
@@ -42,7 +46,7 @@ private:
 	void startCurrentProgram();
 public:
 
-	RunProcess(const QString &filename, QString &inputFilePath = QString(), QObject *parent = nullptr);
+	RunProcess(const QString &filename, QString inputFilePath = QString(), uint outputLimit = 0, QObject *parent = nullptr);
 	~RunProcess(){
 		//qDebug() << "RUNPROCESS DESTROYED.";
 		this->mmThread->quit();
@@ -52,6 +56,7 @@ public:
 	uint getProcessUsedMemory();
 	ProcessStatus getProcessStatus();
 	int getExitCode();
+	uint getDuringTime();
 
 	void setTimeLimit(uint timeLimit);
 	void setMemLimit(uint memLimit);
@@ -78,6 +83,7 @@ private slots:
 	void stopProgramBecauseOfTime();
 	void stopProgramSuccessfully();
 	void stopProgramBecauseCrashed();
+	void stopProgramBecauseOfOutputLimit();
 public slots:
 	void startProgram();
 	void stopProgram();

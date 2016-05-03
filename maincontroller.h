@@ -16,6 +16,7 @@ class MainController : public QObject
 	uint processMemory;
 	RunProcess::ProcessStatus processStatus;
 	int processExitCode;
+	uint processDuringTime;
 	QString outputString;
 
 	QThread *runProcessThread;
@@ -27,6 +28,7 @@ public:
 		//qDebug() << "MAINCONTROLLER CREATED.";
 		this->settings.input = false;
 		this->settings.runPath = QString();
+		this->settings.inputPath = QString();
 		this->settings.ip = QString();
 		this->settings.port = -1;
 		this->settings.timeLimit = 5000;
@@ -55,9 +57,10 @@ private slots:
 		this->processMemory = this->runProcess->getProcessUsedMemory();
 		this->processStatus = this->runProcess->getProcessStatus();
 		this->processExitCode = this->runProcess->getExitCode();
+		this->processDuringTime = this->runProcess->getDuringTime();
 		this->runProcessThread->quit();
 		if(this->settings.printStatus){
-			QString statusStr = "Program exit %1, exit code: %2, used memory: %3k.\n";
+			QString statusStr = "Program exit %1, exit code: %2, used memory: %3k, during time: %4ms.\n";
 			QString str;
 			switch(this->processStatus){
 				case RunProcess::Unknown:
@@ -75,10 +78,13 @@ private slots:
 				case RunProcess::MemoryOutExit:
 					str.append("in memory out");
 					break;
+				case RunProcess::OutputLimit:
+					str.append("in output limit exceeded");
+					break;
 				default:
-					str.append("RunCode source issue");
+					str.append("unfamiliar process status");
 			}
-			inputHandle.puts(statusStr.arg(str).arg(this->processExitCode).arg(this->processMemory));
+			inputHandle.puts(statusStr.arg(str).arg(this->processExitCode).arg(this->processMemory).arg(this->processDuringTime));
 		}
 	}
 
@@ -116,7 +122,7 @@ public slots:
 		this->runProcessThread = new QThread(this);
 		if(!this->settings.runPath.isEmpty()){
 			this->threadList.append(this->runProcessThread);
-			this->runProcess = new RunProcess(this->settings.runPath);
+			this->runProcess = new RunProcess(this->settings.runPath, this->settings.inputPath, this->settings.outputLimit);
 			this->runProcess->setTimeLimit(this->settings.timeLimit);
 			this->runProcess->setMemLimit(this->settings.memLimit);
 			runProcess->moveToThread(this->runProcessThread);
@@ -141,46 +147,6 @@ public slots:
 		if(!this->settings.runPath.isEmpty()){
 			emit this->startRunProcessThread();
 		}
-
-//		this->runProcessThread = new QThread(this); // for running code
-//		connect(this, &MainController::destroyed, this->runProcessThread, &QThread::deleteLater);
-//		this->inputHandleThread = new QThread(this); //for input handle
-//		connect(this, &MainController::destroyed, this->inputHandleThread, &QThread::deleteLater);
-//		InputHandle *inputHandle = new InputHandle;
-
-//		if(!this->settings.runPath.isEmpty()){
-//			this->process = new RunProcess(this->settings.runPath);
-//			process->setTimeLimit(this->settings.timeLimit);
-//			process->setMemLimit(this->settings.memLimit);
-//			process->moveToThread(runProcessThread);
-//			this->connect(runProcessThread, &QThread::started, process, &RunProcess::startProgram);
-//			if(this->settings.printOutput){
-//				this->connect(process, &RunProcess::sendStdOutput, inputHandle, &InputHandle::puts);
-//				//this->connect(runProcess, &RunProcess::sendStdError, inputHandle, &InputHandle::puts);
-//			}
-//			this->connect(process, &RunProcess::sendStdOutput, this, &MainController::appendOutput);
-//			this->connect(process, &RunProcess::analysisFinished, this, &MainController::getProcessStatus);
-//		}
-//		if(this->settings.input){
-//			inputHandle->moveToThread(inputHandleThread);
-//			this->connect(inputHandleThread, &QThread::started, inputHandle, &InputHandle::start);
-//			this->connect(inputHandleThread, &QThread::finished, inputHandle, &InputHandle::finish);
-//			this->connect(inputHandleThread, &QThread::finished, QThread::currentThread(), &QThread::quit);
-//			this->connect(inputHandleThread, &QThread::finished, runProcessThread, &QThread::quit);
-//			//this->connect(runProcessThread, &QThread::finished, inputHandleThread, &QThread::start);
-//			this->connect(inputHandle, &InputHandle::requestToExit, this, &MainController::deleteLater);
-//			if(this->settings.runPath.isEmpty()){
-//				inputHandleThread->start();
-//			}else{
-//				this->connect(runProcessThread, SIGNAL(finished()), inputHandleThread, SLOT(start()));
-//			}
-//		}
-//		if(!this->settings.runPath.isEmpty()){
-//			runProcessThread->start();
-//		}else{
-//			//QThread::currentThread()->quit();
-//			runProcessThread->quit();
-//		}
 	}
 
 	void finish(){
