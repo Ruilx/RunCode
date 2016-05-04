@@ -107,7 +107,17 @@ RunProcess::RunProcess(const QString &filename, QString inputFilePath, uint outp
 	this->outputLimit = outputLimit;
 	this->outputLength = 0;
 
-	this->process->setProgram(filename);
+	if(filename.isEmpty()){
+		emit runFileNotFound();
+		return;
+	}
+	if(!QFile::exists(filename)){
+		emit runFileNotFound();
+		return;
+	}else{
+		this->process->setProgram(filename);
+	}
+
 #if QT_VERSION >= 0x050600 //if QT Version is 5.6.0 or later, QProcess::error signal called errorOccurred
 	this->connect(this->process, &QProcess::errorOccurred, this, &RunProcess::errorOccurred);
 #else

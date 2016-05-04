@@ -31,7 +31,8 @@ HEADERS += \
 
 OTHER_FILES += \
     test/alloc.c \
-    test/a+b_problem.c
+    test/a+b_problem.c \
+    test/helloworld.c
 
 MOC_DIR = $$PWD/moc
 RCC_DIR = $$PWD/rc

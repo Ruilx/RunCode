@@ -73,6 +73,8 @@ signals:
 	void inputFileNotFound();
 	void inputFileOpenFailed();
 
+	void runFileNotFound();
+
 private slots:
 	void errorOccurred(QProcess::ProcessError error);
 	void finished(int exitCode, QProcess::ExitStatus exitStatus);
