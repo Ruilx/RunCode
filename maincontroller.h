@@ -7,6 +7,61 @@
 #include "helper/About.h"
 #include "inputhandle.h"
 #include "runprocess.h"
+#include "network.h"
+
+class ProgramStatus{
+public:
+	/* Status
+	 * 0 Unknown
+	 * 1 Accepted
+	 * 2 Presentation Error
+	 * 3 Wrong Answer
+	 * 4 Output Limit Excedded
+	 * 5 Validator Error
+	 * 6 Memory Limit Excedded
+	 * 7 Time Limit Excedded
+	 * 8 Runtime Error
+	 * 9 Compile Error
+	 * 10 System Error
+	 * 11 Running
+	 * 12 Hidden
+	 * 13 Restricted Function
+	 */
+	enum Status{
+		Unknown = 0,
+		Accepted,
+		PresentationError,
+		WrongAnswer,
+		OutputLimitExcedded,
+		ValidatorError,
+		MemoryLimitExcedded,
+		TimeLimitExcedded,
+		RuntimeError,
+		CompileError,
+		SystemError,
+		Running,
+		Hidden,
+		RestrictedFunction
+	};
+
+	static Status getStatus(RunProcess::ProcessStatus status){
+		switch(status){
+			case RunProcess::NormalExit:
+				return Accepted;
+			case RunProcess::RuntimeErrorExit:
+				return RuntimeError;
+			case RunProcess::TimeOutExit:
+				return TimeLimitExcedded;
+			case RunProcess::MemoryOutExit:
+				return MemoryLimitExcedded;
+			case RunProcess::OutputLimit:
+				return OutputLimitExcedded;
+			case RunProcess::Unknown:
+				return Unknown;
+		}
+		return Unknown;
+	}
+};
 
 class MainController : public QObject
 {
@@ -21,10 +76,70 @@ class MainController : public QObject
 
 	QThread *runProcessThread;
 	QThread *inputHandleThread;
+	//QThread *networkThread;
 	QList<QThread*> threadList;
 
+	Network *network;
+
+	void buildJsonResult(){
+		QVariantList result;
+
+		QVariantMap resultMap;
+		/* MESSAGE
+		 * Name: this vm's name
+		 * Status: Status
+		 * Exitcode: exit code
+		 * TimeUsed: time used
+		 * MemoryUsed: memory used
+		 * OutputString: result
+		 */
+
+		resultMap.insert("Name", this->settings.name);
+		resultMap.insert("Status", ProgramStatus::getStatus(this->processStatus));
+		resultMap.insert("ExitCode", this->processExitCode);
+		resultMap.insert("TimeUsed", this->processDuringTime);
+		resultMap.insert("MemoryUsed", this->processMemory);
+		resultMap.insert("OutputString", this->outputString);
+
+		result << resultMap;
+
+		QJsonDocument doc = QJsonDocument::fromVariant(result);
+		if(doc.isNull()){
+			qDebug() << "[ERROR][jsontake]: result JSON is Empty!";
+			return;
+		}
+		qDebug() << "[DEBUG][jsonTake]: JSON:" << doc;
+
+		this->sendResult(doc);
+
+	}
+
+	void sendResult(QJsonDocument &doc){
+		this->network->send(doc);
+	}
+
+	void sendInfo(){
+		QVariantList info;
+
+		QVariantMap infoMap;
+
+		infoMap.insert("Name", this->settings.name);
+
+		info << infoMap;
+
+		QJsonDocument doc = QJsonDocument::fromVariant(info);
+		if(doc.isNull()){
+			qDebug() << "[ERROR][jsontake]: info JSON is Empty!";
+			return;
+		}
+		qDebug() << "[DEBUG][jsonTake]: JSON:" << doc;
+
+		this->sendResult(doc);
+	}
+
+
 public:
-	explicit MainController(QObject *parent = 0): QObject(parent){
+	explicit MainController(Network *n, QObject *parent = 0): QObject(parent){
 		//qDebug() << "MAINCONTROLLER CREATED.";
 		this->settings.input = false;
 		this->settings.runPath = QString();
@@ -37,6 +152,8 @@ public:
 		this->settings.printStatus = false;
 		this->processMemory = 0;
 		this->processStatus = RunProcess::Unknown;
+
+		this->network = n;
 	}
 	~MainController(){
 		//qDebug() << "MAINCONTROLLER DESTROYED.";
@@ -86,6 +203,7 @@ private slots:
 			}
 			inputHandle.puts(statusStr.arg(str).arg(this->processExitCode).arg(this->processMemory).arg(this->processDuringTime));
 		}
+		this->buildJsonResult();
 	}
 
 	void appendOutput(const QString &str){
@@ -98,6 +216,43 @@ private slots:
 		//emit this->exit();
 	}
 
+	void handleReceive(QJsonDocument doc){
+		/* Doc:
+		 * "name" = NAME
+		 * "message" = MESSAGE
+		 */
+		/*message
+		 * 0: [ErrorCode]
+		 * 1: startRunning
+		 * 2: stopRunning
+		 * 3: showcurrentStatus
+		 */
+		if(doc.isObject()){
+			QVariantMap result = doc.toVariant().toMap();
+			QString name = result.value("name", QString()).toString();
+			int message = result.value("message", -1).toInt();
+
+			if(name != this->settings.name){
+				return;
+			}
+			switch(message){
+				case 0:
+					return;
+				case 1:
+					this->startWorking();
+					break;
+				case 2:
+					this->runProcess->stopProgram();
+					break;
+				case 3:
+//					this->sendCurrentStatus();
+					break;
+				default:
+					return;
+			}
+		}
+	}
+
 public slots:
 	void start(){
 		QString message;
@@ -107,6 +262,41 @@ public slots:
 			doExit();
 			return;
 		}
+		if(this->settings.name.isEmpty()){
+			InputHandle output(this);
+			output.puts("-N argument is MUST! please get an name to runcode vm.\n");
+			doExit();
+			return;
+		}
+		if(this->settings.runPath.isEmpty()){
+			InputHandle output(this);
+			output.puts("-r argument is MUST! please put an runfile or cmd to runcode vm.\n");
+			doExit();
+			return;
+		}
+		if(this->settings.ip.isEmpty() || this->settings.port == 0){
+			InputHandle output(this);
+			output.puts("-n argument is MUST! please put an host ip:port address to runcode vm.\n");
+			doExit();
+			return;
+		}
+		//this->networkThread = new QThread(this);
+		if(!network->connectTo(this->settings.ip, this->settings.port)){
+			InputHandle output(this);
+			output.puts(QString("Network IP:%1:%2 cannot connect:%3").arg(this->settings.ip).arg(this->settings.port).arg(this->network->errorString()));
+			doExit();
+			return;
+		}
+		//this->threadList.append(networkThread);
+		//this->network->moveToThread(networkThread);
+		//connect(networkThread, SIGNAL(finished()), this->network, SLOT(deleteLater()));
+		connect(network, SIGNAL(receivedData(QJsonDocument)), this, SLOT(handleReceive(QJsonDocument)));
+		//networkThread->start();
+		this->sendInfo();
+	}
+
+	void startWorking(){
+
 		InputHandle *output = new InputHandle(this);
 
 		this->inputHandleThread = new QThread(this);

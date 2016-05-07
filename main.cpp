@@ -1,5 +1,6 @@
 #include <QCoreApplication>
 #include "maincontroller.h"
+#include "network.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,8 +12,10 @@ int main(int argc, char *argv[])
 //	QObject::connect(&inputHandleThread, &QThread::finished, &inputHandle, &InputHandle::finish);
 //	inputHandleThread.start();
 
+	Network n;
+
 	QThread mainThread;
-	MainController mainController;
+	MainController mainController(&n);
 	mainController.moveToThread(&mainThread);
 	QObject::connect(&mainThread, &QThread::started, &mainController, &MainController::start);
 	QObject::connect(&mainThread, &QThread::finished, &mainController, &MainController::finish);

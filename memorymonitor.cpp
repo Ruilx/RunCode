@@ -1,4 +1,5 @@
 #include "memorymonitor.h"
+#include <QLoggingCategory>
 
 void MemoryMonitor::timerEvent(QTimerEvent *){
 #if defined(Q_OS_LINUX)

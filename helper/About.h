@@ -17,6 +17,7 @@ public:
 		bool printStatus;
 		bool printOutput;
 		uint outputLimit;
+		QString name;
 	}ArgSettings;
 
 	About();
@@ -28,14 +29,15 @@ public:
 				.append(" [OPTIONS]\n")
 				.append("OPTIONS:\n")
 				.append("  -i                 Open an session to input commands, when use it with -r, it can open session after code exit.\n")
-				.append("  -r execfile        Run an specified execfile, save its stdout, memory usage, time info.\n")
+				.append("* -r execfile        Run an specified execfile, save its stdout, memory usage, time info [MUST].\n")
 				.append("  -f inputfile       Open an input file write in stdin when code is running.\n")
 				.append("  -p                 Print program status to display after ran code.\n")
 				.append("  -s                 Print program stdout to display while running code.\n")
-				.append("  -n ip address:port Connect to host code handle.\n")
+				.append("* -n ip address:port Connect to host code handle [MUST].\n")
 				.append("  -t time limit      Set program time limit (unit: ms)(default: 5000).\n")
 				.append("  -m memory limit    Set program memory limit (unit: kb)(default: 65535).\n")
 				.append("  -h                 Show this help infomation.\n")
+				.append("* -N name            Give a name to runcode result to attach which code it is [MUST!].\n")
 				.append("\n")
 				.append("Made by Ruilx<ruilxalxa@hotmail.com> @ GT-Soft Studio 2016\n")
 				.append("Based on Qt5.6.0 GCC-64bit\n")
@@ -240,6 +242,14 @@ public:
 					}
 					settings.outputLimit = (uint)outputLimit;
 					continue;
+				}
+				if(arg == "N"){
+					if(args.length() <= i+1 && args.at(i+1).startsWith("-")){
+						message = QString(argParameterError(QString('-').append(arg), 1));
+						return false;
+					}
+					i++;
+					settings.name = args.at(i);
 				}
 				else{
 					message = QString(About::argErrorHandle(arg));

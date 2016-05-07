@@ -18,26 +18,43 @@ public:
 	~Network(){
 
 	}
+	QString errorString(){
+		return this->socket->errorString();
+	}
 
 signals:
+	void connected();
+	void disconnected();
 	void receivedData(QJsonDocument);
 public slots:
 	bool connectTo(QString ip, int port){
-		this->socket->connectToHost(QHostAddress(ip), port);
-		return this->socket->waitForConnected(30000);
+		this->socket->connectToHost(/*QHostAddress(*/ip/*)*/, port);
+		return this->socket->waitForConnected(10000);
+	}
+
+	void disconnect(){
+		this->socket->disconnectFromHost();
 	}
 
 	void send(QJsonDocument doc){
-		socket->write(doc.toBinaryData());
+		if(this->socket->isOpen()){
+			qDebug() << "[DEBUG][network]Send json:" << doc;
+			socket->write(doc.toBinaryData());
+		}else{
+			qDebug() << "[ERROR][network.send]: socket is not open.";
+		}
 	}
 
 private slots:
-	void connected(){
+	void connectedSlot(){
 		//qDebug() << "[INFO] [Network] Conneeted.";
+		emit this->connected();
 	}
 
-	void disconnected(){
+	void disconnectedSlot(){
 		//qDebug() << "[INFO] [Network] Disconnected.";
+		emit this->disconnected();
+
 	}
 
 	void receiveData(){
