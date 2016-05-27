@@ -22,7 +22,7 @@ QString About::helpString() {
 			.append("  -m memory limit    Set program memory limit (unit: kb)(default: 65535).\n")
 			.append("  -h                 Show this help infomation.\n")
 			.append("* -N name            Give a name to runcode result to attach which code it is [MUST!].\n")
-			.append("  -o output limit    Limit the program's output size(unit: byte)(default: inf).\n)
+			.append("  -o output limit    Limit the program's output size(unit: byte)(default: inf).\n")
 			.append("\n")
 			.append("Made by Ruilx<ruilxalxa@hotmail.com> @ GT-Soft Studio 2016\n")
 			.append("Based on Qt5.6.0 GCC-64bit\n")
