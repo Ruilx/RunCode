@@ -56,6 +56,22 @@ MemoryMonitor::MemoryMonitor(int pid, uint limitMemory, QObject *parent) : QObje
 	this->interval = 10; //10ms to monitor memoryinfo
 }
 
+MemoryMonitor::~MemoryMonitor(){
+	//qDebug() << "MEMORYMONITOR DESTROYED.";
+}
+
+uint MemoryMonitor::getProgramUsedMemory(){
+	return this->usedMemory;
+}
+
+void MemoryMonitor::setInterval(uint interval){
+	this->interval = interval;
+}
+
+QList<uint> MemoryMonitor::getProgramMemoryUsageHistory(){
+	return this->memUsageHistory;
+}
+
 void MemoryMonitor::startMonitor(){
 	if(this->timerId == -1){
 		//qDebug() << "[DEBUG][startTimer]: Timer start.";

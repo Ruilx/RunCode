@@ -47,11 +47,7 @@ private:
 public:
 
 	RunProcess(const QString &filename, QString inputFilePath = QString(), uint outputLimit = 0, QObject *parent = nullptr);
-	~RunProcess(){
-		//qDebug() << "RUNPROCESS DESTROYED.";
-		this->mmThread->quit();
-		this->mmThread->wait();
-	}
+	~RunProcess();
 
 	uint getProcessUsedMemory();
 	ProcessStatus getProcessStatus();

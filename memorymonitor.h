@@ -24,28 +24,18 @@ class MemoryMonitor : public QObject
 	QList<uint> memUsageHistory;
 
 	void timerEvent(QTimerEvent *);
-
 public:
 	explicit MemoryMonitor(int pid, uint limitMemory, QObject *parent = 0);
-	~MemoryMonitor(){
-		//qDebug() << "MEMORYMONITOR DESTROYED.";
-	}
+	~MemoryMonitor();
 
-	uint getProgramUsedMemory(){
-		return this->usedMemory;
-	}
-	void setInterval(uint interval){
-		this->interval = interval;
-	}
-	QList<uint> getProgramMemoryUsageHistory(){
-		return this->memUsageHistory;
-	}
+	uint getProgramUsedMemory();
+	void setInterval(uint interval);
+	QList<uint> getProgramMemoryUsageHistory();
 
 signals:
 	void memoryOverflowSig();
 public slots:
 	void startMonitor();
-
 	void stopMonitor();
 };
 

@@ -144,6 +144,12 @@ RunProcess::RunProcess(const QString &filename, QString inputFilePath, uint outp
 	}
 }
 
+RunProcess::~RunProcess(){
+	//qDebug() << "RUNPROCESS DESTROYED.";
+	this->mmThread->quit();
+	this->mmThread->wait();
+}
+
 void RunProcess::errorOccurred(QProcess::ProcessError error){
 	switch(error){
 		case QProcess::FailedToStart:
