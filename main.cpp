@@ -8,18 +8,19 @@ int main(int argc, char *argv[])
 
 	Network *n = new Network;
 
-	QThread *mainThread = new QThread;
+	//QThread *mainThread = new QThread;
 	MainController *mainController = new MainController(n);
-	mainController->moveToThread(mainThread);
-	QObject::connect(mainThread, &QThread::started, mainController, &MainController::start);
-	QObject::connect(mainThread, &QThread::finished, mainController, &MainController::finish);
+	//mainController->moveToThread(mainThread);
+	//QObject::connect(mainThread, &QThread::started, mainController, &MainController::start);
+	//QObject::connect(mainThread, &QThread::finished, mainController, &MainController::finish);
 	//QObject::connect(&mainThread, &QThread::finished, &mainController, &MainController::deleteLater);
-	mainThread->start();
+	//mainThread->start();
+	mainController->start();
 
 	int ret = a.exec();
 
-	mainThread->quit();
-	mainThread->wait();
+	//mainThread->quit();
+	//mainThread->wait();
 
 	return ret;
 }

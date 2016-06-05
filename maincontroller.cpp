@@ -26,7 +26,10 @@ void MainController::buildJsonResult(){
 	QJsonDocument doc(obj);
 	qDebug() << "Will send Doc:" << doc;
 
-	this->sendResult(doc);
+	//this->sendResult(doc);
+	emit this->networkSend(doc);
+	QThread::currentThread()->sleep(2);
+	emit this->networkSend(doc);
 }
 
 void MainController::sendResult(QJsonDocument &doc){
@@ -40,7 +43,8 @@ void MainController::sendInfo(){
 
 	QJsonDocument doc(obj);
 
-	this->sendResult(doc);
+	//this->sendResult(doc);
+	emit this->networkSend(doc);
 }
 
 MainController::MainController(Network *n, QObject *parent): QObject(parent){
@@ -58,6 +62,9 @@ MainController::MainController(Network *n, QObject *parent): QObject(parent){
 	this->processStatus = RunProcess::Unknown;
 
 	this->network = n;
+
+	connect(this, SIGNAL(networkConnect(QString,int)), this->network, SLOT(connectTo(QString,int)));
+	connect(this, SIGNAL(networkSend(QJsonDocument)), this->network, SLOT(send(QJsonDocument)));
 }
 
 MainController::~MainController(){
@@ -66,8 +73,8 @@ MainController::~MainController(){
 		thread->quit();
 		thread->wait();
 	}
-	runProcess->deleteLater();
-	network->deleteLater();
+//	runProcess->deleteLater();
+//	network->deleteLater();
 }
 
 void MainController::getProcessStatus(){
@@ -149,12 +156,13 @@ void MainController::start(){
 		return;
 	}
 	//this->networkThread = new QThread(this);
-	if(!network->connectTo(this->settings.ip, this->settings.port)){
-		InputHandle output(this);
-		output.puts(QString("Network IP:%1:%2 cannot connect:%3").arg(this->settings.ip).arg(this->settings.port).arg(this->network->errorString()));
-		doExit();
-		return;
-	}
+//	if(!network->connectTo(this->settings.ip, this->settings.port)){
+//		InputHandle output(this);
+//		output.puts(QString("Network IP:%1:%2 cannot connect:%3").arg(this->settings.ip).arg(this->settings.port).arg(this->network->errorString()));
+//		doExit();
+//		return;
+//	}
+	emit this->networkConnect(this->settings.ip, this->settings.port);
 	//this->threadList.append(networkThread);
 	//this->network->moveToThread(networkThread);
 	//connect(networkThread, SIGNAL(finished()), this->network, SLOT(deleteLater()));

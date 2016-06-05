@@ -90,6 +90,9 @@ signals:
 	void startInputHandleThread();
 	void startRunProcessThread();
 	void exit();
+
+	void networkSend(QJsonDocument doc);
+	void networkConnect(QString ip, int port);
 private slots:
 	void getProcessStatus();
 	void appendOutput(const QString &str);

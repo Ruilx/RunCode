@@ -25,6 +25,7 @@ bool Network::connectTo(QString ip, int port){
 
 void Network::disconnect(){
 	this->socket->disconnectFromHost();
+	this->socket->waitForDisconnected();
 }
 
 void Network::send(QJsonDocument doc){
@@ -44,6 +45,8 @@ void Network::connectedSlot(){
 void Network::disconnectedSlot(){
 	//qDebug() << "[INFO] [Network] Disconnected.";
 	emit this->disconnected();
+	this->socket->waitForBytesWritten();
+	this->socket->waitForDisconnected();
 
 }
 
